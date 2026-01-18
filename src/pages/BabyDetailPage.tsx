@@ -28,10 +28,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { toast } from "@/components/ui/use-toast";
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import GrowthChart from "@/components/GrowthChart";
 import { Calendar } from "@/components/ui/calendar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -249,34 +249,6 @@ const BabyDetailPage = () => {
     toast({
       title: "Medicamento registrado",
       description: "O novo medicamento foi adicionado com sucesso.",
-    });
-  };
-
-  const getGrowthData = () => {
-    // Combinar registros de peso e altura por data
-    const combinedData: { [key: string]: any } = {};
-    
-    weightRecords.forEach(record => {
-      const date = format(parseISO(record.date), "dd/MM/yyyy");
-      if (!combinedData[date]) {
-        combinedData[date] = { date };
-      }
-      combinedData[date].weight = record.weight / 1000; // Converter para kg
-    });
-    
-    heightRecords.forEach(record => {
-      const date = format(parseISO(record.date), "dd/MM/yyyy");
-      if (!combinedData[date]) {
-        combinedData[date] = { date };
-      }
-      combinedData[date].height = record.height;
-    });
-    
-    // Converter para array e ordenar por data
-    return Object.values(combinedData).sort((a: any, b: any) => {
-      const dateA = a.date.split('/').reverse().join('');
-      const dateB = b.date.split('/').reverse().join('');
-      return dateA.localeCompare(dateB);
     });
   };
 
@@ -554,87 +526,12 @@ const BabyDetailPage = () => {
               </Card>
             </div>
             
-            {(weightRecords.length > 0 || heightRecords.length > 0) && (
-              <Card className="overflow-hidden">
-                <CardHeader className="pb-0">
-                  <CardTitle className="text-lg font-medium">
-                    Gráfico de Crescimento
-                  </CardTitle>
-                  <CardDescription>
-                    Visualize o progresso de peso e altura ao longo do tempo
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="pt-4 pb-0">
-                  <div className="h-80 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={getGrowthData()} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
-                        <defs>
-                          <linearGradient id="colorWeight" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.8}/>
-                            <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
-                          </linearGradient>
-                          <linearGradient id="colorHeight" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <XAxis dataKey="date" />
-                        <YAxis yAxisId="left" orientation="left" stroke="#3b82f6" />
-                        <YAxis yAxisId="right" orientation="right" stroke="#10b981" />
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <Tooltip 
-                          content={({ active, payload, label }) => {
-                            if (active && payload && payload.length) {
-                              return (
-                                <div className="bg-card text-card-foreground p-3 border border-border rounded-md shadow-sm">
-                                  <p className="font-medium mb-1">{label}</p>
-                                  {payload.map((entry, index) => (
-                                    <p key={`item-${index}`} className="text-sm" style={{ color: entry.color }}>
-                                      {entry.name === "weight" 
-                                        ? `Peso: ${entry.value} kg` 
-                                        : `Altura: ${entry.value} cm`}
-                                    </p>
-                                  ))}
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <Area 
-                          yAxisId="left"
-                          type="monotone" 
-                          dataKey="weight" 
-                          stroke="#3b82f6" 
-                          fillOpacity={1} 
-                          fill="url(#colorWeight)" 
-                          name="weight"
-                        />
-                        <Area 
-                          yAxisId="right"
-                          type="monotone" 
-                          dataKey="height" 
-                          stroke="#10b981" 
-                          fillOpacity={1} 
-                          fill="url(#colorHeight)" 
-                          name="height"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                  <div className="flex justify-center gap-6 mt-2 mb-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">Peso (kg)</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      <span className="text-sm text-muted-foreground">Altura (cm)</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+            {/* Curva de Crescimento com referência OMS/MS */}
+            <GrowthChart 
+              baby={baby} 
+              weightRecords={weightRecords} 
+              heightRecords={heightRecords} 
+            />
           </TabsContent>
           
           <TabsContent value="vaccines">
